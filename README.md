@@ -1,4 +1,8 @@
 # ZX-EQ Firmware
+------------------------------------------------------------------------------
+Increased indicator refresh rate.
+All 8 or 10 indicator segments are utilized.
+------------------------------------------------------------------------------
 
 Альтернативная прошивка под проект ZX-EQ (https://github.com/RBSC/ZX-EQ).
 
