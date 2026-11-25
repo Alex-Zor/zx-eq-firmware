@@ -5,6 +5,9 @@
 // supports both common anode and common cathode led bars
 // Warning: schematic pinout connected to totally different signals on real ZX BUS, see both schematics 
 // ------------------------------------------------------
+// Fixed and updated by Alex Zor 25 November 2026
+// ------------------------------------------------------
+
 module zx_eq_top(
 	input wire clk,
 	input wire [2:0] cfg,
@@ -40,17 +43,16 @@ wire wr_addr = bdir && bc1;
 wire wr_data = bdir && ~bc1;
 
 // mux counter
-reg [16:0] scan_cnt; 
+reg [15:0] scan_cnt; 
 always @(posedge clk) begin
-	scan_cnt <= scan_cnt + 17'd1;
+	scan_cnt <= scan_cnt + 16'd1;
 end
-wire [1:0] current_col = scan_cnt[16:15]; 
-wire scan_clk = scan_cnt == 17'b11111111111111111;
+wire [1:0] current_col = scan_cnt[15:14]; 
+wire scan_clk = scan_cnt == 16'b1111111111111111;
 
 // AY reg address
 reg [3:0] ay_addr;
-always @(posedge clk)
-	if (wr_addr)
+always @(posedge wr_addr)
 		ay_addr <= d[3:0];
 		
 // AY channel freq and volumes
@@ -70,8 +72,8 @@ always @(posedge clk) begin
 			4'h2: freq_b[1:0] <= d[7:6];
 			4'h4: freq_c[1:0] <= d[7:6];
 			4'h1: freq_a[4:2] <= d[2:0] || {3{d[3]}};
-			4'h3: freq_a[4:2] <= d[2:0] || {3{d[3]}};
-			4'h5: freq_a[4:2] <= d[2:0] || {3{d[3]}};
+			4'h3: freq_b[4:2] <= d[2:0] || {3{d[3]}};
+			4'h5: freq_c[4:2] <= d[2:0] || {3{d[3]}};
 			4'h8: vol_a[2:0] <= d[3:1];
 			4'h9: vol_b[2:0] <= d[3:1];
 			4'ha: vol_c[2:0] <= d[3:1];
@@ -98,13 +100,32 @@ module led_bar #(
 )(
     input wire [2:0] level,
     output wire [WIDTH-1:0] led_bar
-);
-    genvar i;
-    generate
-        for (i = 0; i < WIDTH; i = i + 1) begin : led_gen
-            assign led_bar[i] = (((i==WIDTH-1) && (level >= i)) || ((i < WIDTH-1) && (level > i)));
+);	 
+	 generate
+        if (WIDTH == 8) begin : led_8bit
+            assign led_bar[0] = (level > 0);
+				assign led_bar[1] = (level > 1);
+				assign led_bar[2] = (level > 2);
+				assign led_bar[3] = (level > 3);
+				assign led_bar[4] = (level > 4);
+				assign led_bar[5] = (level > 5);
+				assign led_bar[6] = (level == 7);
+				assign led_bar[7] = (level == 7);
+
         end
-    endgenerate
+		  else if (WIDTH == 10) begin : led_10bit
+            assign led_bar[0] = (level > 0);
+				assign led_bar[1] = (level > 1);
+				assign led_bar[2] = (level > 2);
+				assign led_bar[3] = (level > 2);
+				assign led_bar[4] = (level > 3);
+				assign led_bar[5] = (level > 4);
+				assign led_bar[6] = (level > 4);
+				assign led_bar[7] = (level > 5);
+				assign led_bar[8] = (level == 7);
+				assign led_bar[9] = (level == 7);
+        end
+    endgenerate	
 endmodule
 
 // fall off data (slow decrement) for the led bars
